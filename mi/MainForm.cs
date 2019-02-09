@@ -1,42 +1,38 @@
-﻿using ScpDriverInterface;
-using HidLibrary;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Linq;
-using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Forms;
+using HidLibrary;
+using ScpDriverInterface;
+using NativeMethods = HidLibrary.NativeMethods;
 
 namespace mi
 {
     public partial class MainForm : Form
     {
-        private static ScpBus global_scpBus;
-        private static Dictionary<String, Xiaomi_gamepad> mapped_devices;
+        private static ScpBus GlobalScpBus { get; set; }
+        private static Dictionary<string, XiaomiGamepad> MappedDevices { get; set; }
 
         public MainForm()
         {
             InitializeComponent();
         }
 
-        protected override void WndProc(ref Message m)
-        {
-            base.WndProc(ref m);
-        }
-
         private void InvokeUI(Action a)
         {
-            this.BeginInvoke(new MethodInvoker(a));
+            BeginInvoke(new MethodInvoker(a));
         }
 
-        private void detectDevices()
+        private void DetectDevices()
         {
             Int32 lastResults = 0;
             while (true)
             {
-                Int32 result = searchDevice();
+                Int32 result = SearchDevice();
                 if (result > 0)
                 {
                     if (lastResults != result)
@@ -46,7 +42,7 @@ namespace mi
                         InvokeUI(() =>
                         {
 
-                            notifyIcon1.BalloonTipTitle = "MiX360 Gamepad";
+                            notifyIcon1.BalloonTipTitle = @"MiX360 Gamepad";
                             notifyIcon1.BalloonTipText = text;
                             notifyIcon1.ShowBalloonTip(500);
                         });
@@ -54,71 +50,70 @@ namespace mi
                 }
                 Thread.Sleep(5000);
             }
-
         }
 
        
-        private Int32 searchDevice()
+        private Int32 SearchDevice()
         {
             var compatibleDevices = HidDevices.Enumerate(0x2717, 0x3144).ToList();
-            ScpBus scpBus = global_scpBus;
-            Dictionary<string, Xiaomi_gamepad> already_mapped = mapped_devices;
+            ScpBus scpBus = GlobalScpBus;
+            Dictionary<string, XiaomiGamepad> alreadyMapped = MappedDevices;
             
             //Debug.WriteLine(Device.DevicePath);
             foreach (var deviceInstance in compatibleDevices)
             {
-                HidDevice Device = deviceInstance;
-                if (already_mapped.ContainsKey(Device.DevicePath))
+                HidDevice device = deviceInstance;
+                if (alreadyMapped.ContainsKey(device.DevicePath))
                 {
                     continue;
                 }
                 
                 try
                 {
-                    Device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.Exclusive);
+                    device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.Exclusive);
                 }
                 catch
                 {
-                    var instanceId = devicePathToInstanceId(deviceInstance.DevicePath);
+                    var instanceId = DevicePathToInstanceId(deviceInstance.DevicePath);
                     if (TryReEnableDevice(instanceId))
                     {
                         try
                         {
-                            Device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.Exclusive);
+                            device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.Exclusive);
                         }
                         catch
                         {
-                            Device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.ShareRead | ShareMode.ShareWrite);
+                            device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.ShareRead | ShareMode.ShareWrite);
                         }
                     }
                     else
                     {
-                        Device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.ShareRead | ShareMode.ShareWrite);
+                        device.OpenDevice(DeviceMode.Overlapped, DeviceMode.Overlapped, ShareMode.ShareRead | ShareMode.ShareWrite);
                     }
                 }
 
-                byte[] Vibration = { 0x20, 0x00, 0x00 };
-                if (Device.WriteFeatureData(Vibration) == false)
+                byte[] vibration = { 0x20, 0x00, 0x00 };
+                if (device.WriteFeatureData(vibration) == false)
                 {
-                    Device.CloseDevice();
+                    device.CloseDevice();
                     continue;
                 }
 
                 byte[] serialNumber;
                 byte[] product;
-                Device.ReadSerialNumber(out serialNumber);
-                Device.ReadProduct(out product);
+                device.ReadSerialNumber(out serialNumber);
+                device.ReadProduct(out product);
 
-                Int32 index = mapped_devices.Count + 1;
-                Xiaomi_gamepad gamepad = new Xiaomi_gamepad(Device, scpBus, index);
-                mapped_devices.Add(Device.DevicePath, gamepad);
+                Int32 index = MappedDevices.Count + 1;
+                XiaomiGamepad gamepad = new XiaomiGamepad(device, scpBus, index, this);
+                MappedDevices.Add(device.DevicePath, gamepad);
             }
 
-            return mapped_devices.Count;
+            return MappedDevices.Count;
         }
 
 
-        private static string devicePathToInstanceId(string devicePath)
+        private static string DevicePathToInstanceId(string devicePath)
         {
             string deviceInstanceId = devicePath;
             deviceInstanceId = deviceInstanceId.Remove(0, deviceInstanceId.LastIndexOf('\\') + 1);
@@ -136,44 +131,45 @@ namespace mi
             try
             {
                 bool success;
+                
                 Guid hidGuid = new Guid();
-                HidLibrary.NativeMethods.HidD_GetHidGuid(ref hidGuid);
-                IntPtr deviceInfoSet = HidLibrary.NativeMethods.SetupDiGetClassDevs(ref hidGuid, deviceInstanceId, 0, HidLibrary.NativeMethods.DIGCF_PRESENT | HidLibrary.NativeMethods.DIGCF_DEVICEINTERFACE);
-                HidLibrary.NativeMethods.SP_DEVINFO_DATA deviceInfoData = new HidLibrary.NativeMethods.SP_DEVINFO_DATA();
+                NativeMethods.HidD_GetHidGuid(ref hidGuid);
+                IntPtr deviceInfoSet = NativeMethods.SetupDiGetClassDevs(ref hidGuid, deviceInstanceId, 0, NativeMethods.DIGCF_PRESENT | NativeMethods.DIGCF_DEVICEINTERFACE);
+                NativeMethods.SP_DEVINFO_DATA deviceInfoData = new NativeMethods.SP_DEVINFO_DATA();
                 deviceInfoData.cbSize = Marshal.SizeOf(deviceInfoData);
-                success = HidLibrary.NativeMethods.SetupDiEnumDeviceInfo(deviceInfoSet, 0, ref deviceInfoData);
-                success = HidLibrary.NativeMethods.SetupDiEnumDeviceInfo(deviceInfoSet, 1, ref deviceInfoData); // Checks that we have a unique device
+                success = NativeMethods.SetupDiEnumDeviceInfo(deviceInfoSet, 0, ref deviceInfoData);
+                success = NativeMethods.SetupDiEnumDeviceInfo(deviceInfoSet, 1, ref deviceInfoData); // Checks that we have a unique device
                
-                HidLibrary.NativeMethods.SP_PROPCHANGE_PARAMS propChangeParams = new HidLibrary.NativeMethods.SP_PROPCHANGE_PARAMS();
+                NativeMethods.SP_PROPCHANGE_PARAMS propChangeParams = new NativeMethods.SP_PROPCHANGE_PARAMS();
                 propChangeParams.classInstallHeader.cbSize = Marshal.SizeOf(propChangeParams.classInstallHeader);
-                propChangeParams.classInstallHeader.installFunction = HidLibrary.NativeMethods.DIF_PROPERTYCHANGE;
-                propChangeParams.stateChange = HidLibrary.NativeMethods.DICS_DISABLE;
-                propChangeParams.scope = HidLibrary.NativeMethods.DICS_FLAG_GLOBAL;
+                propChangeParams.classInstallHeader.installFunction = NativeMethods.DIF_PROPERTYCHANGE;
+                propChangeParams.stateChange = NativeMethods.DICS_DISABLE;
+                propChangeParams.scope = NativeMethods.DICS_FLAG_GLOBAL;
                 propChangeParams.hwProfile = 0;
-                success = HidLibrary.NativeMethods.SetupDiSetClassInstallParams(deviceInfoSet, ref deviceInfoData, ref propChangeParams, Marshal.SizeOf(propChangeParams));
+                success = NativeMethods.SetupDiSetClassInstallParams(deviceInfoSet, ref deviceInfoData, ref propChangeParams, Marshal.SizeOf(propChangeParams));
                 if (!success)
                 {
                     return false;
                 }
-                success = HidLibrary.NativeMethods.SetupDiCallClassInstaller(HidLibrary.NativeMethods.DIF_PROPERTYCHANGE, deviceInfoSet, ref deviceInfoData);
+                success = NativeMethods.SetupDiCallClassInstaller(NativeMethods.DIF_PROPERTYCHANGE, deviceInfoSet, ref deviceInfoData);
                 if (!success)
                 {
                     return false;
 
                 }
-                propChangeParams.stateChange = HidLibrary.NativeMethods.DICS_ENABLE;
-                success = HidLibrary.NativeMethods.SetupDiSetClassInstallParams(deviceInfoSet, ref deviceInfoData, ref propChangeParams, Marshal.SizeOf(propChangeParams));
+                propChangeParams.stateChange = NativeMethods.DICS_ENABLE;
+                success = NativeMethods.SetupDiSetClassInstallParams(deviceInfoSet, ref deviceInfoData, ref propChangeParams, Marshal.SizeOf(propChangeParams));
                 if (!success)
                 {
                     return false;
                 }
-                success = HidLibrary.NativeMethods.SetupDiCallClassInstaller(HidLibrary.NativeMethods.DIF_PROPERTYCHANGE, deviceInfoSet, ref deviceInfoData);
+                success = NativeMethods.SetupDiCallClassInstaller(NativeMethods.DIF_PROPERTYCHANGE, deviceInfoSet, ref deviceInfoData);
                 if (!success)
                 {
                     return false;
                 }
 
-                HidLibrary.NativeMethods.SetupDiDestroyDeviceInfoList(deviceInfoSet);
+                NativeMethods.SetupDiDestroyDeviceInfoList(deviceInfoSet);
 
                 return true;
             }
@@ -185,29 +181,50 @@ namespace mi
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            global_scpBus.UnplugAll();
+            GlobalScpBus.UnplugAll();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.ShowInTaskbar = false;
-            this.Hide();
+            WindowState = FormWindowState.Minimized;
+            FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            ShowInTaskbar = false;
+//            Hide();
 
-            ScpBus scpBus = new ScpBus();
+            var scpBus = new ScpBus();
             scpBus.UnplugAll();
-            global_scpBus = scpBus;
-            mapped_devices = new Dictionary<string, Xiaomi_gamepad>();
+            GlobalScpBus = scpBus;
+            
+            MappedDevices = new Dictionary<string, XiaomiGamepad>();
 
-            Thread detectThread = new Thread(detectDevices);
+            var detectThread = new Thread(DetectDevices);
             detectThread.IsBackground = true;
             detectThread.Start();
         }
 
-        private void mnuItemExit_Click(object Sender, EventArgs e)
+        private void mnuItemExit_Click(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+        
+        public void CreateTextIcon(string str)
+        {
+            Font font = new Font("Microsoft Sans Serif", 9, FontStyle.Regular, GraphicsUnit.Pixel);
+            Brush brush = new SolidBrush(Color.White);
+            Bitmap text = new Bitmap(16, 16);
+            Graphics g = Graphics.FromImage(text);
+            //var battery = new Icon(SystemIcons.)
+
+            IntPtr hIcon;
+
+            g.Clear(Color.Transparent);
+            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+            g.DrawString(str, font, brush, 0, -2);
+            g.DrawString("%", font, brush, 1, 6);
+
+            hIcon = (text.GetHicon());
+            notifyIcon1.Icon = Icon.FromHandle(hIcon);
+            //DestroyIcon(hIcon.ToInt32);
         }
     }
 
