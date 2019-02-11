@@ -46,7 +46,7 @@
             this.notifyIcon1.Visible = true;
             
             // MainForm
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
             this.Name = "MainForm";
             this.Text = "MiX360 Gamepad";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);

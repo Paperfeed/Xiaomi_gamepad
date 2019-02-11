@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mi", "mi\mi.csproj", "{6C084899-30AD-44EF-9975-699D75B5D61B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MipadService", "MipadService\MipadService.csproj", "{767B4C1F-D367-4ACF-A448-AA8F593480FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{6C084899-30AD-44EF-9975-699D75B5D61B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C084899-30AD-44EF-9975-699D75B5D61B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C084899-30AD-44EF-9975-699D75B5D61B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{767B4C1F-D367-4ACF-A448-AA8F593480FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{767B4C1F-D367-4ACF-A448-AA8F593480FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{767B4C1F-D367-4ACF-A448-AA8F593480FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{767B4C1F-D367-4ACF-A448-AA8F593480FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
