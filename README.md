@@ -185,3 +185,8 @@ Input packets:
 [byte (MI button)]
 ```
 
+
+
+Credits
+===
+- irugentoo - Original creator of this project and the person that initially reverse engineered the gamepad's protocol

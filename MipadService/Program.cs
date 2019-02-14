@@ -1,19 +1,17 @@
-﻿using System;
+﻿using System.ServiceProcess;
 
 namespace MipadService
 {
-    internal class Program
+	internal static class Program
     {
-        private static void Main()
+	    private static void Main()
         {
-            Console.WriteLine(@"You can not run a Windows Service from the commandline. "
-                              + @"Use InstallUtil.exe from the .net framework to install the service.");
+	        var servicesToRun = new ServiceBase[]
+	        {
+		        new MipadService()
+	        };
 
-#if DEBUG
-            Thread.Sleep(10000);
-#endif
-
-            System.ServiceProcess.ServiceBase.Run(new MipadService());
+	        ServiceBase.Run(servicesToRun);
         }
     }
 }

@@ -8,10 +8,10 @@ namespace mi
 {
     public class XiaomiGamepad
     {
-        private byte[] Vibration { get; } = {0x20, 0x00, 0x00};
-        private Mutex RumbleMutex { get; } = new Mutex();
-        private MainForm Form { get; }
-        private byte BatteryLevel { get; set; }
+        private byte[] Vibration = {0x20, 0x00, 0x00};
+        private Mutex RumbleMutex = new Mutex();
+        private MainForm Form;
+        private byte BatteryLevel;
 
         public XiaomiGamepad(HidDevice device, ScpBus scpBus, int index, MainForm form)
         {
