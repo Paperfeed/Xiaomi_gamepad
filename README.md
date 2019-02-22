@@ -1,15 +1,19 @@
 Xiaomi Gamepad - x360 Input
 ====
 
-This project is a slightly modified version of the one created by irungentoo.
-
-
-The mi project contains the source of a remapper that uses SCP Bus to make Windows see it as an Xbox controller. 
-The rumble also works perfectly.
-
+This project is a modified version of the one created by irungentoo.
+It now includes a windows service so that you do not have to run the application before you can use your gamepad.
 
 The Xiaomi is an excellent controller but it lacks documentation.
+
+The Mi project contains the source of a remapper that uses SCP Bus to make Windows see it as an Xbox controller. 
+Rumble works perfectly.
+
 The accelerometer_print folder contains a linux program that enables the accelerometer and prints the values.
+
+
+## Installation
+Just run Mipadservice.exe and click yes to install :-)
 
 
 ## Hardware

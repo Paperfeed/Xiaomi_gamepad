@@ -23,6 +23,7 @@ namespace MipadService
         private int lastResults;
         private Timer timer;
 
+        
         public MipadService()
         {
             ServiceName = ServiceShortName;
@@ -31,6 +32,7 @@ namespace MipadService
             AutoLog = false;
         }
 
+        
         protected override void OnStart(string[] args)
         {
             //Debugger.Launch();
@@ -40,22 +42,26 @@ namespace MipadService
             timer.Elapsed += OnTimer;
             timer.Start();
         }
+        
 
         protected override void OnPause()
         {
             timer.Enabled = false;
         }
+        
 
         protected override void OnContinue()
         {
             timer.Enabled = true;
         }
+        
 
         protected override void OnStop()
         {
             base.OnStop();
             timer.Dispose();
         }
+        
 
         private void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
@@ -68,6 +74,7 @@ namespace MipadService
             //String text = result + " device(s) connected";
             //EventLog.WriteEntry(text, EventLogEntryType.Information);
         }
+        
 
         private static int SearchDevice()
         {
@@ -145,6 +152,7 @@ namespace MipadService
             return deviceInstanceId;
         }
 
+        
         private static bool TryReEnableDevice(string deviceInstanceId)
         {
             try
@@ -199,5 +207,7 @@ namespace MipadService
                 return false;
             }
         }
+        
+        
     }
 }
